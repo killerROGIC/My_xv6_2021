@@ -17,12 +17,14 @@ int main(int argc, char *argv[]) {
     char *p = line;
     char *x_argv[MAXARG];
     int i;
+    // 读取命令行参数
     for (i = 0; i < argc; i++) {
         x_argv[i] = argv[i + 1];
     }
 
     // 记录数据字节数
     int rsz = sizeof(char);
+    // 循环从标准输入中读取字符
     while (rsz == sizeof(char)) {
         int word_begin = 0;
         int word_end = 0;
@@ -37,7 +39,7 @@ int main(int argc, char *argv[]) {
                 exit(1);
             }
 
-            // 空字符/换行符
+            // 空字符/换行符判断
             if (*p == ' ' || *p == '\n' || rsz != sizeof(char)) {
                 *p = 0;
                 x_argv[arg_cnt++] = &line[word_begin];
