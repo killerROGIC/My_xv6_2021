@@ -2,7 +2,7 @@
 #include "kernel/stat.h"
 #include "user/user.h"
 
-void func(int * p){
+void primes(int * p){
     int p1[2];
     p1[0] = p[0]; p1[1] = p[1];
  
@@ -15,8 +15,9 @@ void func(int * p){
         printf("prime %d\n", prime);
  
         if(fork() == 0){
-            func(p);
-        } else {
+            primes(p);
+        }
+        else {
             close(p[0]);
             while ( read(p1[0], num, 1) == 1 ){
                 int n = num[0];
@@ -41,8 +42,9 @@ int main(int argc, char *argv[])
     pipe(p);
  
     if(fork() == 0){
-      func(p);
-    } else {
+        primes(p);
+    }
+    else {
         close(p[0]);
         char num[1];
         for (int i = 2; i <= 35; i++){

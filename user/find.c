@@ -4,39 +4,38 @@
 #include "user/user.h"
 
 void find(char *dir, char *file){
-    struct stat st;
-    struct dirent de;
     int fd;
     char buf[512], *p;
+    struct stat st;         // 文件状态
+    struct dirent de;       // 目录项
  
-
     strcpy(buf, dir);
     p = buf + strlen(buf);
     *p++ = '/';
- 
+    // 文件打开失败
     if( (fd = open(dir, 0)) < 0 ){
         fprintf(2, "find: cannot open %s\n", dir);
         return;
     }
- 
+    // 无法获取文件状态
     if( fstat(fd, &st) < 0 ){
         fprintf(2, "find: cannot stat %s\n", dir);
         close(fd);
         return;
     }
- 
+    // 参数非目录名
     if(st.type != T_DIR){
         fprintf(2, "find: %s is not a dir\n", dir);
         close(fd);
         return;
     }
     
-    // read the every file or dir in the `dir` sequentially
+    // 读取目录项
     while( read(fd, &de, sizeof(de)) == sizeof(de)){
         if(de.inum == 0) continue;
  
         char *name = de.name;
-        if(strcmp(name, ".") == 0 || strcmp(name, "..") == 0) continue; // not consider the . and ..
+        if(strcmp(name, ".") == 0 || strcmp(name, "..") == 0) continue;     // 不在“.”和“..”目录中递归
  
         memmove(p, name, DIRSIZ);
         p[DIRSIZ] = 0;
@@ -55,10 +54,7 @@ void find(char *dir, char *file){
     close(fd);
 }
  
-// find <dir_name> <file_name>
-// find all the <file_name> in the <dir_name>
-int
-main(int argc, char* argv[]){
+int main(int argc, char* argv[]){
     if(argc < 3){
         fprintf(1, "the arguments is too few...\n");
         exit(1);

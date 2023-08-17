@@ -2,91 +2,60 @@
 #include "kernel/stat.h"
 #include "kernel/param.h"
 #include "user/user.h"
-#include <stdbool.h>
+#include <stdbool.h>    
  
-int seq_num = MAXARG;
+#define MAX_LEN 512
  
- 
-void exec1(char **argv){
-    if(fork() == 0){
-        exec(argv[0], argv);
-    } else {
-        wait(0);
-    }
-}
- 
-int main(int argc, char* argv[]) {
-    if (argc < 2) {
-        fprintf(2, "too few arguments...");
+int main(int argc, char *argv[]) {
+    // 参数数目不对
+    if (argc - 1 >= MAXARG || argc < 2) {
+        printf("wrong arguments nember.\n");
         exit(1);
     }
- 
-    char buf[512];
-    int read_n = 0;
-    int read_total = 0;
- 
-    while( (read_n = read(0, buf + read_total, 512)) > 0 ){
-        read_total += read_n;
+
+    char line[MAX_LEN];
+    char *p = line;
+    char *x_argv[MAXARG];
+    int i;
+    for (i = 0; i < argc; i++) {
+        x_argv[i] = argv[i + 1];
     }
-    int len = read_total;
- 
-    for(int i = 0; i < len; i ++){
-        if(buf[i] == '\n') buf[i] = ' ';
-    }
- 
-    int cmd_ptr = 1;
-    bool is_set_n = false;
- 
-    // set the max args
-    if(strcmp(argv[1], "-n") == 0){
-        is_set_n = true;
-        cmd_ptr = 3;
-    }
- 
-    char* cmd_argv[MAXARG];
-    int idx = 0;
-    for (int i = cmd_ptr; i < argc; i++) {
-        char *arg = (char *)malloc(strlen(argv[i])+1); 
-        strcpy(arg, argv[i]);
-        cmd_argv[idx] = arg;
-        idx ++;
-    }
- 
-    if(is_set_n){
-        int index = 0;
-        char arg[MAXARG];
-        memset(arg, 0, MAXARG); // clear the space
-        for(int i = 0; i < len; i++){
-            if(buf[i] == ' ') { // can spilt out a arg
- 
-                arg[index++] = '\0';
-                cmd_argv[idx++] = arg;
- 
-                // run
-                exec1(cmd_argv);
- 
-                index = 0;
-                memset(arg, 0, MAXARG); // clear the space
- 
-                idx --;
-                continue;
+
+    // 记录数据字节数
+    int rsz = sizeof(char);
+    while (rsz == sizeof(char)) {
+        int word_begin = 0;
+        int word_end = 0;
+        int arg_cnt = i - 1;
+
+        // 读取一行
+        while (1) {
+            // 读取字符
+            rsz = read(0, p, sizeof(char));
+            if (++word_end >= MAX_LEN) {
+                printf("arguments is too long.\n");
+                exit(1);
             }
-            arg[index ++] = buf[i];
-        }
-    } else {
-        int prev = 0;
-        // should spilt the args with ' '
-        // and put them into cmd_argv sequentially
-        for(int i = 0; i < len; i ++){
-            if(buf[i] == ' '){
-                char* add_arg = (char *)malloc(i - prev);
-                memcpy(add_arg, buf+prev, i - prev);
-                prev = i+1; // attention
-                cmd_argv[idx++] = add_arg;
+
+            // 空字符/换行符
+            if (*p == ' ' || *p == '\n' || rsz != sizeof(char)) {
+                *p = 0;
+                x_argv[arg_cnt++] = &line[word_begin];
+                word_begin = word_end;
+                if (arg_cnt >= MAXARG) {
+                    printf("too many arguments.\n");
+                    exit(1);
+                }
+                if (*p == '\n' || rsz != sizeof(char))
+                    break;
             }
+            ++p;
         }
-        exec1(cmd_argv);
+
+        if (fork() == 0) {
+            exec(argv[1], x_argv);
+        }
+        wait(0);
     }
- 
     exit(0);
 }
