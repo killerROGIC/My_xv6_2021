@@ -77,12 +77,49 @@ sys_sleep(void)
 
 
 #ifdef LAB_PGTBL
+extern pte_t * walk(pagetable_t, uint64, int);
+
 int
 sys_pgaccess(void)
 {
-  // lab pgtbl: your code here.
+  uint64 BitMask = 0;
+  
+  uint64 StartVA;
+  int NumberOfPages;
+  uint64 BitMaskVA;
+  
+  // 读取页面数量
+  if(argint(1, &NumberOfPages) < 0)
+    return -1;
+  
+  // 判断页面数量超过了一次可以读取的最大范围
+  if(NumberOfPages > MAXSCAN)
+    return -1;                    
+  
+  // 读取页面开始地址和指向用户态存放结果的BitMask的指针
+  if(argaddr(0, &StartVA) < 0)
+    return -1;
+  if(argaddr(2, &BitMaskVA) < 0)
+    return -1;
+
+  int i;
+  pte_t* pte;
+	
+  // 从起始地址开始，逐页判断PTE_A是否被置位
+  for(i = 0 ; i < NumberOfPages ; StartVA += PGSIZE, ++i){
+    if((pte = walk(myproc()->pagetable, StartVA, 0)) == 0)
+      panic("pgaccess : walk failed");
+    if(*pte & PTE_A){
+      BitMask |= 1 << i;
+      *pte &= ~PTE_A;
+    }
+  }
+  
+  // 将内核态下的BitMask拷贝到用户态
+  copyout(myproc()->pagetable, BitMaskVA, (char*)&BitMask, sizeof(BitMask));
   return 0;
 }
+
 #endif
 
 uint64
