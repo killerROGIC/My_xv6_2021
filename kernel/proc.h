@@ -105,4 +105,11 @@ struct proc {
   struct file *ofile[NOFILE];  // Open files
   struct inode *cwd;           // Current directory
   char name[16];               // Process name (debugging)
+
+  int interval;     //保存sigalarm传入的参数n 
+  uint64 handler;   //保存sigalarm传入的参数fn
+  int ticks;        //记录当前经历过的时钟次数
+  int flag;         //用于标记此时是否在hansdler函数中，0表示不在，1表示在
+  struct trapframe *copy; //用于拷贝被打断处的用户进程的CPU现场
+
 };
