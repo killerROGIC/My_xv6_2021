@@ -134,7 +134,7 @@ void* cowalloc(pagetable_t pagetable, uint64 va) {
     // 复制旧页面内容到新页
     memmove(mem, (char*)pa, PGSIZE);
 
-    // 清除PTE_V，否则在mappagges中会判定为remap
+    // 清除PTE_V，否则在mappages中会判定为remap
     *pte &= ~PTE_V;
 
     // 为新页面添加映射
